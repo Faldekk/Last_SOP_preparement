@@ -11,35 +11,43 @@
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
-#define FS_NUM 5
-#define MAX_INPUT 120
-volatile sig_atomic_t work = 1;
+#define FS_NUM 5 // Limit budzików
+#define MAX_INPUT 120 // maksymalna ilosc sekunf
+volatile sig_atomic_t work = 1; // sig flag
 
-void sigint_handler(int sig) { work = 0; }
+// Obsługa sygnału SIGINT - ustawia flagę work na 0 aby zakończyć program
+void sigint_handler(int sig) { 
+    if(sig!=0){
+        sig = 0; 
+    }
+}
 
-int set_handler(void (*f)(int), int sigNo)
+// Ustawia handler dla określonego sygnału używając sigaction
+// Parametry: f - wskaźnik na funkcję obsługującą sygnał, sigNo - numer sygnału
+int set_handler(void (*f)(int), int sigNo) 
 {
     struct sigaction act;
     memset(&act, 0, sizeof(struct sigaction));
     act.sa_handler = f;
-    if (-1 == sigaction(sigNo, &act, NULL))
+    if (sigaction(sigNo, &act, NULL) == -1)
         return -1;
     return 0;
 }
 
 struct arguments
 {
-    int32_t time;
-    sem_t *semaphore;
+    int32_t time; // czas 
+    sem_t *semaphore; //semafora
 };
 
+// Funkcja wątku alarmu - śpi przez zadany czas, następnie zwalnia semafor
+// Używa semafora do ograniczenia liczby jednocześnie działających alarmów
 void *thread_func(void *arg)
 {
     struct arguments *args = (struct arguments *)arg;
     uint32_t tt;
     fprintf(stderr, "Will sleep for %d\n", args->time);
-    for (tt = args->time; tt > 0; tt = sleep(tt))
-        ;
+    for (tt = args->time; tt > 0; tt = sleep(tt));
     puts("Wake up");
     if (sem_post(args->semaphore) == -1)
         ERR("sem_post");
@@ -47,6 +55,8 @@ void *thread_func(void *arg)
     return NULL;
 }
 
+// Główna pętla programu - pobiera czas od użytkownika i tworzy wątki alarmów
+// Używa semafora do ograniczenia maksymalnej liczby jednocześnie działających alarmów (FS_NUM)
 void do_work()
 {
     int32_t time;
@@ -94,8 +104,9 @@ void do_work()
     }
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
+    
     if (set_handler(sigint_handler, SIGINT))
         ERR("Seting SIGINT:");
     do_work();

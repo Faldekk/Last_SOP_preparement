@@ -19,6 +19,8 @@ struct arguments
     pthread_barrier_t *barrier;
 };
 
+// Funkcja wątku gracza - symuluje gre w kość z synchronizacją
+// Każdy gracz rzuca kością, używa bariery do synchronizacji i przydzielania punktów
 void* thread_func(void *arg) {
     struct arguments *args = (struct arguments *)arg;
     for (int round = 0; round < ROUNDS; ++round) {
@@ -50,6 +52,8 @@ void* thread_func(void *arg) {
     return NULL;
 }
 
+// Inicjalizuje i tworzy wątki dla wszystkich graczy
+// Każdy wątek otrzymuje unikalny seed i referencje do wspólnych danych
 void create_threads(pthread_t *thread, struct arguments *targ, pthread_barrier_t *barrier, int *scores, int* rolls)
 {
     srand(time(NULL));

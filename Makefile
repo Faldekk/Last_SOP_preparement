@@ -1,62 +1,27 @@
-# Makefile for Lab SOP4 C programs
+override CFLAGS=-Wall -Wextra -fanalyzer -g -O0 -fsanitize=address,undefined
 
-# Compiler and flags
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -pthread
-DEBUG_FLAGS = -g -O0
-RELEASE_FLAGS = -O2
+ifdef CI
+override CFLAGS=-Wall -Wextra -Werror
+endif
 
-# Source files
-SOURCES = Clock-sync.c Dice-sync.c Summary.c Task1.c Thread-pool-sync.c
+.PHONY: clean all
 
-# Executable names (remove .c extension)
-EXECUTABLES = Clock-sync Dice-sync Summary Task1 Thread-pool-sync
+all: sop-mss clock-sync dice-sync task1 thread-pool-sync
 
-# Default target
-all: $(EXECUTABLES)
+sop-mss: sop-mss.c
+	gcc $(CFLAGS) -o sop-mss sop-mss.c
 
-# Individual targets for each program
-Clock-sync: Clock-sync.c
-	$(CC) $(CFLAGS) $(RELEASE_FLAGS) -o $@ $<
+clock-sync: Clock-sync.c
+	gcc $(CFLAGS) -lpthread -o clock-sync Clock-sync.c
 
-Dice-sync: Dice-sync.c
-	$(CC) $(CFLAGS) $(RELEASE_FLAGS) -o $@ $<
+dice-sync: Dice-sync.c
+	gcc $(CFLAGS) -lpthread -o dice-sync Dice-sync.c
 
-Summary: Summary.c
-	$(CC) $(CFLAGS) $(RELEASE_FLAGS) -o $@ $<
+task1: Task1.c
+	gcc $(CFLAGS) -lpthread -o task1 Task1.c
 
-Task1: Task1.c
-	$(CC) $(CFLAGS) $(RELEASE_FLAGS) -o $@ $<
+thread-pool-sync: Thread-pool-sync.c
+	gcc $(CFLAGS) -lpthread -o thread-pool-sync Thread-pool-sync.c
 
-Thread-pool-sync: Thread-pool-sync.c
-	$(CC) $(CFLAGS) $(RELEASE_FLAGS) -o $@ $<
-
-# Debug versions
-debug: CFLAGS += $(DEBUG_FLAGS)
-debug: $(EXECUTABLES)
-
-# Clean target
 clean:
-	rm -f $(EXECUTABLES)
-
-# Clean and rebuild
-rebuild: clean all
-
-# Help target
-help:
-	@echo "Available targets:"
-	@echo "  all          - Compile all programs (default)"
-	@echo "  debug        - Compile with debug flags"
-	@echo "  clean        - Remove all executables"
-	@echo "  rebuild      - Clean and rebuild all"
-	@echo "  help         - Show this help message"
-	@echo ""
-	@echo "Individual programs:"
-	@echo "  Clock-sync"
-	@echo "  Dice-sync"
-	@echo "  Summary"
-	@echo "  Task1"
-	@echo "  Thread-pool-sync"
-
-# Mark phony targets
-.PHONY: all debug clean rebuild help
+	rm -f sop-mss clock-sync dice-sync task1 thread-pool-sync

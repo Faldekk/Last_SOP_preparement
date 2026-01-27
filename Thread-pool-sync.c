@@ -25,8 +25,10 @@ typedef struct
     pthread_mutex_t *mutex;
 } thread_arg;
 
+// Handler sygnału SIGINT - ustawia flagę work na 0 aby zakończyć program
 void sigint_handler(int sig) { work = 0; }
 
+// Ustawia obsługę sygnału używając sigaction
 void set_handler(void (*f)(int), int sigNo)
 {
     struct sigaction act;
@@ -37,6 +39,7 @@ void set_handler(void (*f)(int), int sigNo)
         ERR("sigaction");
 }
 
+// Czyta dokładnie 'count' bajtów z deskryptora pliku (obsługuje przerwania)
 ssize_t bulk_read(int fd, char *buf, size_t count)
 {
     int c;
@@ -55,6 +58,7 @@ ssize_t bulk_read(int fd, char *buf, size_t count)
     return len;
 }
 
+// Zapisuje dokładnie 'count' bajtów do deskryptora pliku (obsługuje przerwania)
 ssize_t bulk_write(int fd, char *buf, size_t count)
 {
     int c;
@@ -71,8 +75,11 @@ ssize_t bulk_write(int fd, char *buf, size_t count)
     return len;
 }
 
+// Funkcja cleanup wywoływana przy anulowaniu wątku - odblokowuje mutex
 void cleanup(void *arg) { pthread_mutex_unlock((pthread_mutex_t *)arg); }
 
+// Czyta losowe dane z /dev/urandom i zapisuje do pliku randomX.bin
+// Symuluje pracę wątku przez odczyt READCHUNKS fragmentów danych
 void read_random(int thread_id)
 {
     char file_name[20];
@@ -99,6 +106,8 @@ void read_random(int thread_id)
         ERR("close");
 }
 
+// Główna funkcja wątku w puli - czeka na zadania używając mutex i zmiennej warunku
+// Implementuje wzorzec producent-konsument dla puli wątków
 void *thread_func(void *arg)
 {
     thread_arg targ;
@@ -122,6 +131,8 @@ void *thread_func(void *arg)
     return NULL;
 }
 
+// Inicjalizuje pulę wątków - tworzy THREAD_NUM wątków roboczych
+// Każdy wątek otrzymuje referencje do wspólnych struktur synchronizacyjnych
 void init(pthread_t *thread, thread_arg *targ, pthread_cond_t *cond, pthread_mutex_t *mutex, int *idlethreads,
           int *condition)
 {
@@ -138,6 +149,8 @@ void init(pthread_t *thread, thread_arg *targ, pthread_cond_t *cond, pthread_mut
     }
 }
 
+// Główna pętla zarządzająca zadaniami - czyta dane wejściowe i przydziela pracę
+// Używa mutex do synchronizacji dostępu do licznika bezczynnych wątków
 void do_work(pthread_cond_t *cond, pthread_mutex_t *mutex, const int *idlethreads, int *condition)
 {
     char buffer[BUFFERSIZE];
